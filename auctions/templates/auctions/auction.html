@@ -1,0 +1,30 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div style="display: flex; flex-direction: column; gap: 20px;">
+    <h1>
+        Listing: {{auction.title}}
+    </h1>
+    <img src="{{auction.img}}" alt="{{auction.title}}" style="width: 350px;">
+    <p>{{auction.desc}}</p>
+    <h2>Starting Bid: ${{auction.init_bid}}</h2>
+    <form action="{% url 'auction' auction.id %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <input placeholder="bid" class="form-control" style="width: 30%;" type="number" min="{{auction.init_bid}}"
+                required>
+        </div>
+        <button type="submit" class="btn btn-primary">Place Bid</button>
+    </form>
+    {% if message %}
+    <p style="color: orange;">{{message}}</p>
+    {% endif %}
+    <div>
+        <h3>Details</h3>
+        <ul>
+            <li>Listed by: {{auction.user}}</li>
+            <li>Category: {{auction.Category}}</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
