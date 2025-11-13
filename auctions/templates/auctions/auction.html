@@ -2,28 +2,55 @@
 
 {% block body %}
 <div style="display: flex; flex-direction: column; gap: 20px;">
+    {% if watchlist %}
+    <form method="post" action="{% url 'auction' auction.id %}">
+        <button name="unwatchlist" class="btn btn-warning">
+            Remove Watchlist -
+        </button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'auction' auction.id %}">
+        <button name="watchlist" class="btn btn-primary">
+            Watchlist +
+        </button>
+    </form>
+    {% endif %}
     <h1>
         Listing: {{auction.title}}
     </h1>
     <img src="{{auction.img}}" alt="{{auction.title}}" style="width: 350px;">
     <p>{{auction.desc}}</p>
-    <h2>Starting Bid: ${{auction.init_bid}}</h2>
+    <h4>Starting Bid: ${{ auction.init_bid }}</h4>
+    <h2>Current Price: ${{ current_price }}</h2>
     <form action="{% url 'auction' auction.id %}" method="post">
         {% csrf_token %}
+        {% if publisher %}
+        <button type="submit" class="btn btn-primary">Close</button>
+        {% else %}
         <div class="form-group">
-            <input placeholder="bid" class="form-control" style="width: 30%;" type="number" min="{{auction.init_bid}}"
-                required>
+            <input name="bid" placeholder="bid" class="form-control" style="width: 30%;" type="number"
+                min="{{auction.init_bid}}" required>
         </div>
         <button type="submit" class="btn btn-primary">Place Bid</button>
+        {% endif %}
+
     </form>
     {% if message %}
-    <p style="color: orange;">{{message}}</p>
+    <p style="font-weight: 700;">{{message}}</p>
     {% endif %}
     <div>
         <h3>Details</h3>
         <ul>
             <li>Listed by: {{auction.user}}</li>
-            <li>Category: {{auction.Category}}</li>
+            <li>Category:
+                <ul>
+                    {% for category in auction.categories.all %}
+                    <li>{{ category.title }}</li>
+                    {% empty %}
+                    <li>No categories</li>
+                    {% endfor %}
+                </ul>
+            </li>
         </ul>
     </div>
 </div>

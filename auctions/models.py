@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -18,10 +19,10 @@ class Auction(models.Model):
     img = models.URLField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     categories = models.ManyToManyField(Category, related_name="auctions")
-    create_datetime = models.DateTimeField()
+    create_datetime = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.title} FOR {self.init_bid} PUBLISHED BY {self.user} ON {self.create_datetime} CATEGORY: {self.category}"
+        return self.title
     
 class Bid(models.Model):
     amount = models.DecimalField(max_digits=10 ,decimal_places=2)
@@ -35,6 +36,7 @@ class Comment(models.Model):
     text = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
+
 
 class Watch(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="watch_lists")

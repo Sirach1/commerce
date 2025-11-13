@@ -3,35 +3,32 @@
 {% block body %}
 <div style="padding: 50px;">
     <form action="{% url 'create' %}" method="post">
+        {% csrf_token %}
         <div class="form-group">
             <label for="title">Title (Product Name)</label>
-            <input type="text" class="form-control" id="title" placeholder="Enter Title">
+            <input type="text" class="form-control" name="title" placeholder="Enter Title">
         </div>
         <div class="form-group">
             <label for="desc">Description</label>
-            <input type="text" class="form-control" id="desc" placeholder="Description">
-        </div>
-        <div class="form-group">
-            <label for="desc">Description</label>
-            <textarea class="form-control" id="desc"></textarea>
+            <textarea class="form-control" name="desc"></textarea>
         </div>
         <div class="form-group">
             <label for="init_bid">Starting bid</label>
-            <input type="number" class="form-control" id="init_bid" placeholder="Price">
+            <input type="number" class="form-control" name="init_bid" placeholder="Price">
         </div>
         <div class="form-group">
             <label for="img">Img Url</label>
-            <input type="number" class="form-control" id="img" placeholder="Price">
+            <input type="url" class="form-control" name="img" placeholder="Url">
         </div>
         <div class="form-group">
-            <label for="category">Category</label>
-            <select class="form-control" id="category" multiple required>
+            <label for="categories">Category</label>
+            <select class="form-control" name="categories" multiple required>
                 {% for category in categories %}
                 <option value="{{ category.id }}">{{category}}</option>
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary">Create</button>
     </form>
 </div>
 
