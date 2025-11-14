@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .models import User, Auction, Category, Bid, Watch, Comment
 
 
-def index(request):
+def index(request, category_id):
     listings = Auction.objects.all()
     return render(request, "auctions/index.html", {"auctions": listings})
 
@@ -174,3 +174,9 @@ def create(request):
 
 def watchlist(request):
     pass
+
+
+def category(request):
+    categories = Category.objects.all()
+    if request.method == "GET":
+        return render(request, "auctions/category.html", {"categories": categories})

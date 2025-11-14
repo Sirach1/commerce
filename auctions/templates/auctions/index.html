@@ -3,7 +3,8 @@
 {% block body %}
 <h2>Active Listings</h2>
 
-<div class="card-deck">
+<div class="card-deck" style="padding: 20px;">
+    {% if user.is_authenticated %}
     {% for auction in auctions %}
     <a href="{% url 'auction' auction.id %}" class="card">
         <img class="card-img-top" style="width: 200px;" src="{{auction.img}}" alt="{{auction.title}}">
@@ -14,5 +15,10 @@
         </div>
     </a>
     {% endfor %}
+    {% else %}
+    <div>
+        <p>Please <a href="{% url 'login' %}">login</a> to see listings.</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
