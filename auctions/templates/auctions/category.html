@@ -1,20 +1,35 @@
 {% extends 'auctions/layout.html' %}
 
 {% block body %}
-<div class="row">
-    {% for category in categories %}
-    <a href="{% url 'index' %}" class="card">
-        <img class="card-img-top" style="width: 200px;" src="{{category.thumbnail}}" alt="{{category.title}}">
-        <div class="card-body">
-            <h5 class="card-title">{{category.title}}</h5>
+<div class="col" style="gap: 20px;">
+    <form method="post" action="{% url 'categories' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="title">Title (Category)</label>
+            <input type="text" class="form-control" name="title" placeholder="Enter Category">
         </div>
-    </a>
-    {% empty %}
-    <div>
-        <p>No categories.</p>
+        <div class="form-group">
+            <label for="thumbnail">Image Url</label>
+            <input type="url" class="form-control" name="thumbnail" placeholder="url">
+        </div>
+        <button class="btn btn-outline-primary" type="submit">Add Category</button>
+    </form>
+    <div class="row">
+        {% for category in categories %}
+        <a href="{% url 'category' category.id %}" class="card">
+            <img class="card-img-top" style="width: 200px;" src="{{category.thumbnail}}" alt="{{category.title}}">
+            <div class="card-body">
+                <h5 class="card-title">{{category.title}}</h5>
+            </div>
+        </a>
+        {% empty %}
+        <div>
+            <p>No categories.</p>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
+
 
 
 {% endblock %}

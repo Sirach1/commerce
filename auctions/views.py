@@ -9,9 +9,20 @@ from django.contrib.auth.decorators import login_required
 from .models import User, Auction, Category, Bid, Watch, Comment
 
 
-def index(request, category_id):
-    listings = Auction.objects.all()
-    return render(request, "auctions/index.html", {"auctions": listings})
+def index(request, category_id=None):
+    if category_id:
+        category = Category.objects.get(id=category_id)
+        listings = Category.objects.get(id=category_id).auctions.all()
+    elif request.resolver_match.url_name == "closed_index":
+        listings = Auction.objects.filter(is_active=False)
+    else:
+        listings = Auction.objects.filter(is_active=True)
+
+    return render(
+        request,
+        "auctions/index.html",
+        {"auctions": listings, "category": category if category_id else None},
+    )
 
 
 def login_view(request):
@@ -70,83 +81,100 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
-
+@login_required
 def auction(request, id):
     auction = Auction.objects.get(id=id)
-    bids = Bid.objects.filter(auction=auction)
+    current_price = auction.current_price()
+    is_watchlisted = auction.is_watchlisted(request.user)
     if request.method == "GET":
-        if bids.exists():
-            current_price = bids.order_by("-amount").first().amount
-        else:
-            current_price = auction.init_bid
         return render(
             request,
             "auctions/auction.html",
-            {
-                "auction": auction,
-                "publisher": request.user == auction.user,
-                "current_price": current_price,
-            },
+            {"auction": auction, "watchlist": is_watchlisted},
         )
 
     # Bidding Feat.
-    elif request.method == "POST" and "bid" in request.POST:
+    elif "bid" in request.POST:
         pending_bid = float(request.POST["bid"])
-        if not bids.exists():
-            if pending_bid > auction.init_bid:
-                new_bid = Bid(amount=pending_bid, user=request.user, auction=auction)
-                new_bid.save()
-                return render(
-                    request,
-                    "auctions/auction.html",
-                    {
-                        "auction": auction,
-                        "message": "Bid placed successfully.",
-                    },
-                )
+        if pending_bid > current_price:
+            new_bid = Bid(amount=pending_bid, user=request.user, auction=auction)
+            new_bid.save()
+            return render(
+                request,
+                "auctions/auction.html",
+                {
+                    "auction": auction,
+                    "message": "Bid placed successfully.",
+                    "watchlist": is_watchlisted,
+                },
+            )
         else:
-            current_price = bids.order_by("-amount").first().amount
-            if pending_bid > current_price:
-                new_bid = Bid(amount=pending_bid, user=request.user, auction=auction)
-                new_bid.save()
-                return render(
-                    request,
-                    "auctions/auction.html",
-                    {
-                        "auction": auction,
-                        "message": "Bid placed successfully.",
-                    },
-                )
-
+            return render(
+                request,
+                "auctions/auction.html",
+                {
+                    "auction": auction,
+                    "message": "Your bid must be higher than the current biding price.",
+                    "watchlist": is_watchlisted,
+                },
+            )
+    # Close auction
+    elif "close" in request.POST:
+        auction = Auction.objects.get(id=request.POST["auction_id"])
+        auction.is_active = False
+        auction.save()
+        listings = Auction.objects.filter(is_active=False)
         return render(
             request,
-            "auctions/auction.html",
-            {
-                "auction": auction,
-                "message": "Your bid must be higher than the current biding price.",
-            },
+            "auctions/index.html",
+            {"auctions": listings, "category":  None},
         )
-    else:
+    # Watchlist
+    elif "watchlist" in request.POST:
         if "watchlist" in request.POST:
             # add
+            watchlist = Watch(user=request.user, auction=auction)
+            watchlist.save()
+            is_watchlisted = auction.is_watchlisted(request.user)
             return render(
                 request,
                 "auctions/auction.html",
                 {
                     "auction": auction,
                     "message": "This acution has been watchlisted.",
+                    "watchlist": is_watchlisted,
                 },
             )
-        else:
-            # remove
-            return render(
-                request,
-                "auctions/auction.html",
-                {
-                    "auction": auction,
-                    "message": "This acution has been removed from your watchlist.",
-                },
-            )
+    # Unwatchlist
+    elif "unwatchlist" in request.POST:
+        # remove
+        watchlist = request.user.watchlists.filter(auction=auction)
+        watchlist.delete()
+        is_watchlisted = auction.is_watchlisted(request.user)
+        return render(
+            request,
+            "auctions/auction.html",
+            {
+                "auction": auction,
+                "message": "This acution has been removed from your watchlist.",
+                "watchlist": is_watchlisted,
+            },
+        )
+    else:
+        comment = Comment(
+            text=request.POST["comment"], user=request.user, auction=auction
+        )
+        comment.save()
+
+        return render(
+            request,
+            "auctions/auction.html",
+            {
+                "auction": auction,
+                "message": "This acution has been removed from your watchlist.",
+                "watchlist": is_watchlisted,
+            },
+        )
 
 
 @login_required
@@ -171,12 +199,18 @@ def create(request):
         new_listing.save()
         return HttpResponseRedirect(reverse("index"))
 
-
+@login_required
 def watchlist(request):
-    pass
+    if request.method == "GET":
+        watchlist = request.user.watchlists.all()
+        return render(request, "auctions/watchlist.html", {"list": watchlist})
 
-
+@login_required
 def category(request):
     categories = Category.objects.all()
-    if request.method == "GET":
-        return render(request, "auctions/category.html", {"categories": categories})
+    if request.method == "POST":
+        new_category = Category(
+            title=request.POST["title"], thumbnail=request.POST["thumbnail"]
+        )
+        new_category.save()
+    return render(request, "auctions/category.html", {"categories": categories})
